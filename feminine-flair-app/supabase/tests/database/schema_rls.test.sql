@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(8);
 
 select has_table('public', 'products', 'products table exists');
 select has_table('public', 'orders', 'orders table exists');
@@ -22,6 +22,16 @@ select throws_ok(
   '42501',
   null,
   'anon cannot select from orders'
+);
+select throws_ok(
+  $$ insert into orders (customer_name, phone, delivery_mode, total_kes, status) values ('Test', '0700000000', 'pickup', 1000, 'paid') $$,
+  '42501',
+  null,
+  'anon cannot create an order with a non-pending status'
+);
+select lives_ok(
+  $$ insert into orders (customer_name, phone, delivery_mode, total_kes, status) values ('Test', '0700000000', 'pickup', 1000, 'pending') $$,
+  'anon can create an order with pending status'
 );
 
 select * from finish();
