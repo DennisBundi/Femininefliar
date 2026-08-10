@@ -92,6 +92,9 @@ export function CheckoutPage() {
           <OrderSummary />
           <PaystackButton
             customerName={form.fullName}
+            phone={form.phone}
+            email={form.email}
+            address={form.address}
             disabled={!isValid}
             onAttemptWhileInvalid={() => setTouched({ fullName: true, phone: true, email: true, address: true })}
           />
