@@ -1249,13 +1249,17 @@ git commit -m "feat: wire checkout to real order creation and Paystack payment"
 ### Task 9: Paystack webhook edge function
 
 **Files:**
+- Create: `supabase/migrations/0004_mark_order_paid_function.sql`
 - Create: `supabase/functions/paystack-webhook/verify.ts`
 - Create: `supabase/functions/paystack-webhook/verify.test.ts`
 - Create: `supabase/functions/paystack-webhook/index.ts`
 
 **Interfaces:**
-- Consumes: `decrement_stock_for_order` (Task 2), `orders`/`transactions` tables (Task 1).
+- Consumes: `orders`/`order_items`/`products`/`transactions` tables (Task 1).
+- Produces: `mark_order_paid_and_decrement_stock(p_order_id uuid) returns boolean` — wraps the order-status flip and the stock decrement in one atomic Postgres function call, so a webhook redelivery can never observe "order paid but stock not yet decremented" as a stuck, unrecoverable state. Returns `true` the first time it transitions an order from `pending` to `paid` (caller should then record the transaction), `false` if the order was already `paid` (caller should treat as an idempotent no-op). This function replaces direct use of Task 2's `decrement_stock_for_order` from the webhook — that function stays as-is for any other future caller, this task just doesn't call it directly anymore.
 - Produces: a running edge function at `/functions/v1/paystack-webhook`, the only writer of `orders.status`. Consumed by Task 10's integration test and, in production, by Paystack's webhook delivery.
+
+**Why not just fix the idempotency guard on the `orders` update alone:** an UPDATE that flips `status` and a separate RPC call that decrements stock are two non-atomic steps. Guarding only on `orders.status` means a webhook redelivery after a crash between those two steps sees the order already `paid` and skips the retry — permanently leaving stock un-decremented (an overselling risk). Combining both into one Postgres function call makes them succeed or fail together as a single transaction, closing that gap.
 
 - [ ] **Step 1: Write the failing test for signature verification**
 
@@ -1338,6 +1342,44 @@ export function parseChargeEvent(body: string): ChargeSuccessEvent | null {
 Run: `npm run test`
 Expected: PASS.
 
+- [ ] **Step 4.5: Write the atomic order-paid + stock-decrement function**
+
+Create `supabase/migrations/0004_mark_order_paid_function.sql`:
+```sql
+create or replace function mark_order_paid_and_decrement_stock(p_order_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  did_transition boolean;
+begin
+  update orders
+  set status = 'paid'
+  where id = p_order_id
+    and status = 'pending';
+
+  did_transition := found;
+
+  if did_transition then
+    update products p
+    set stock = greatest(0, p.stock - oi.quantity),
+        units_sold = p.units_sold + oi.quantity
+    from order_items oi
+    where oi.order_id = p_order_id
+      and oi.product_id = p.id;
+  end if;
+
+  return did_transition;
+end;
+$$;
+
+revoke all on function mark_order_paid_and_decrement_stock(uuid) from public;
+grant execute on function mark_order_paid_and_decrement_stock(uuid) to service_role;
+```
+A single `plpgsql` function body executes inside one implicit transaction — if the stock-decrement `UPDATE` inside the `if` block were to error, the whole function call (including the earlier order-status `UPDATE`) rolls back together, so the two changes can never be observed half-done. Apply with `supabase db reset` and confirm no errors.
+
 - [ ] **Step 5: Write the edge function handler**
 
 Create `supabase/functions/paystack-webhook/index.ts`:
@@ -1365,28 +1407,47 @@ Deno.serve(async (req) => {
   }
 
   // Never trust the webhook payload's amount/status alone — re-verify server-to-server.
-  const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${event.data.reference}`, {
-    headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
-  });
+  // A network-level failure or a non-2xx from Paystack's own API is transient — return 500 so
+  // Paystack retries. Only a definitive "this charge did not succeed" response from Paystack
+  // itself is a 200 (no retry needed).
+  let verifyRes: Response;
+  try {
+    verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${event.data.reference}`, {
+      headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+    });
+  } catch {
+    return new Response("Failed to reach Paystack verify API", { status: 500 });
+  }
+
+  if (!verifyRes.ok) {
+    return new Response("Paystack verify API returned an error", { status: 500 });
+  }
+
   const verifyJson = await verifyRes.json();
-  if (!verifyRes.ok || verifyJson?.data?.status !== "success") {
+  if (verifyJson?.data?.status !== "success") {
     return new Response("Charge not verified as successful", { status: 200 });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   const orderId = event.data.reference;
 
-  const { error: orderUpdateError } = await supabase
-    .from("orders")
-    .update({ status: "paid", paystack_reference: orderId })
-    .eq("id", orderId)
-    .eq("status", "pending"); // idempotency guard: a retried webhook delivery is a no-op past the first success
+  // Atomic: flips orders.status to "paid" AND decrements stock in one Postgres transaction, or
+  // does neither. Returns false if this order was already paid (idempotent no-op on retry) —
+  // in that case skip the transaction insert too, since it would just duplicate the audit row.
+  const { data: didTransition, error: transitionError } = await supabase.rpc(
+    "mark_order_paid_and_decrement_stock",
+    { p_order_id: orderId }
+  );
 
-  if (orderUpdateError) {
-    return new Response(`Failed to update order: ${orderUpdateError.message}`, { status: 500 });
+  if (transitionError) {
+    return new Response(`Failed to mark order paid: ${transitionError.message}`, { status: 500 });
   }
 
-  await supabase.from("transactions").insert({
+  if (!didTransition) {
+    return new Response("Already processed", { status: 200 });
+  }
+
+  const { error: transactionError } = await supabase.from("transactions").insert({
     order_id: orderId,
     paystack_reference: orderId,
     amount_kes: Math.round(verifyJson.data.amount / 100),
@@ -1394,9 +1455,13 @@ Deno.serve(async (req) => {
     raw_payload: verifyJson.data,
   });
 
-  const { error: stockError } = await supabase.rpc("decrement_stock_for_order", { p_order_id: orderId });
-  if (stockError) {
-    return new Response(`Order marked paid but stock decrement failed: ${stockError.message}`, { status: 500 });
+  if (transactionError) {
+    // Order is already correctly paid and stock is already correctly decremented (the atomic
+    // step above succeeded) — only the audit-log row failed. Don't return 500 here: that would
+    // make Paystack retry a delivery that already succeeded, and the retry would immediately
+    // hit the idempotency no-op above and still never record the transaction. Surface the
+    // failure in the response body for operator visibility instead.
+    return new Response(`Order paid but failed to record transaction: ${transactionError.message}`, { status: 200 });
   }
 
   return new Response("OK", { status: 200 });
@@ -1406,7 +1471,7 @@ Deno.serve(async (req) => {
 - [ ] **Step 6: Commit**
 
 ```bash
-git add supabase/functions/paystack-webhook
+git add supabase/migrations/0004_mark_order_paid_function.sql supabase/functions/paystack-webhook
 git commit -m "feat: add Paystack webhook edge function"
 ```
 
@@ -1419,7 +1484,7 @@ git commit -m "feat: add Paystack webhook edge function"
 - Modify: `package.json` (test script split)
 
 **Interfaces:**
-- Consumes: the served edge function from Task 9, `decrement_stock_for_order` from Task 2, seeded products from Task 3.
+- Consumes: the served edge function from Task 9, `mark_order_paid_and_decrement_stock` from Task 9, seeded products from Task 3.
 
 - [ ] **Step 1: Add a script to run integration tests separately (they need the local stack up)**
 
@@ -1492,6 +1557,27 @@ describe("paystack-webhook integration", () => {
 
     const { data: updatedProduct } = await supabase.from("products").select("stock").eq("id", productId).single();
     expect(updatedProduct!.stock).toBeLessThan(12);
+  });
+
+  it("does not double-decrement stock when Paystack redelivers the same webhook", async () => {
+    // Same order/reference as the previous test — simulates Paystack retrying a delivery
+    // (e.g. after a timeout) for a charge that was already fully processed. This is exactly
+    // the case Task 9's atomic mark_order_paid_and_decrement_stock function exists to guard.
+    const { data: beforeRetry } = await supabase.from("products").select("stock").eq("id", productId).single();
+
+    const body = JSON.stringify({ event: "charge.success", data: { reference: orderId, amount: 320000, status: "success" } });
+    const signature = await signBody(body, PAYSTACK_SECRET_KEY);
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/paystack-webhook`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-paystack-signature": signature },
+      body,
+    });
+
+    expect(res.status).toBe(200);
+
+    const { data: afterRetry } = await supabase.from("products").select("stock").eq("id", productId).single();
+    expect(afterRetry!.stock).toBe(beforeRetry!.stock);
   });
 });
 ```
@@ -1668,5 +1754,5 @@ git commit -m "test: add Playwright e2e setup and pre-payment checkout flow test
 ## Self-Review Notes
 
 - **Spec coverage:** Section 1 (full schema) → Task 1. Section 1's RLS → Task 1. Stock atomicity → Task 2. "Seed directly for v1" → Task 3. Section 2 (storefront read path) → Tasks 4–5. Section 3 (checkout & order creation) → Tasks 6, 8. Section 4 (payment confirmation, webhook, atomic decrement trigger) → Tasks 7, 8, 9, 10. Section 5 (error handling / cart preserved / no false success) → Task 8, Step 5's `useEffect` gating cart-clear on `status === "paid"`. Out-of-scope list respected — no admin/POS/accounts/wishlist/reviews/search files touched anywhere in this plan.
-- **Type consistency checked:** `Product`/`OrderStatus` types used identically across Tasks 4, 5, 7, 8. `createOrder`'s `CreateOrderInput` shape (Task 6) matches exactly what `PaystackButton` passes in Task 8. `decrement_stock_for_order(uuid)` signature (Task 2) matches the `supabase.rpc(...)` call in Task 9.
+- **Type consistency checked:** `Product`/`OrderStatus` types used identically across Tasks 4, 5, 7, 8. `createOrder`'s `CreateOrderInput` shape (Task 6) matches exactly what `PaystackButton` passes in Task 8. `mark_order_paid_and_decrement_stock(uuid)` signature (Task 9) matches the `supabase.rpc(...)` call in its own `index.ts` — added after Task 9's implementation revealed the original plan's separate order-update + `decrement_stock_for_order` calls weren't atomic as a pair (see Task 9's fix history).
 - **Known open dependency:** Task 10 and the manual-verification parts of Task 8/11 require a real Paystack **test-mode** account and secret/public keys, which the user needs to provide (or create) — not something creatable from this session. Flagged inline in each relevant step rather than left as a silent gap.
