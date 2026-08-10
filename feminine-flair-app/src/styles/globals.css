@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Brand tokens mirrored from tailwind.config.js for use in plain CSS if needed */
+:root {
+  --burgundy: #630625;
+  --burgundy-dark: #4a041c;
+  --blush: #f5b7bd;
+  --blush-soft: #fce3e6;
+  --ink: #241417;
+  --paper: #fffdfd;
+}
+
+body {
+  font-family: "Manrope", sans-serif;
+  color: var(--ink);
+  background-color: var(--paper);
+}
+
+/* Visible keyboard focus ring across every interactive element — buttons, links, inputs,
+   custom accordion/popover toggles all use native <button>/<a>/<input> so this one rule
+   covers keyboard accessibility site-wide without per-component focus styling. */
+:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 2px;
+}
