@@ -1140,14 +1140,13 @@ Modify `src/features/storefront/checkout/CheckoutPage.tsx`, replace the `<Paysta
 
 Modify `src/features/storefront/checkout/PaystackButton.tsx` (full replacement):
 ```tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/useToast";
 import { createOrder } from "@/lib/orders";
 import { payWithPaystack } from "@/lib/paystack";
 import { useOrderStatus } from "@/hooks/useOrderStatus";
-import { useEffect } from "react";
 
 interface PaystackButtonProps {
   customerName: string;
