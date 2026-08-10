@@ -73,4 +73,53 @@ describe("PaystackButton", () => {
     expect(onAttemptWhileInvalid).toHaveBeenCalled();
     expect(createOrder).not.toHaveBeenCalled();
   });
+
+  it("does NOT clear the cart when Paystack's onSuccess fires but the order status has not become paid", async () => {
+    createOrder.mockResolvedValue({ orderId: "order-456" });
+    // Simulate the Paystack popup itself reporting a successful charge client-side.
+    payWithPaystack.mockImplementation(({ onSuccess }: { onSuccess: (ref: string) => void }) => {
+      onSuccess("order-456");
+    });
+
+    renderButton();
+    fireEvent.click(screen.getByRole("button", { name: /pay with paystack/i }));
+
+    await waitFor(() => expect(payWithPaystack).toHaveBeenCalled());
+
+    // mockedStatus is never flipped to "paid" (no webhook confirmation arrived),
+    // so the cart must remain exactly as it was even though onSuccess ran.
+    expect(mockedStatus).toBeNull();
+    expect(useCart.getState().lines).toHaveLength(1);
+  });
+
+  it("clears the cart only once useOrderStatus reports the order as paid", async () => {
+    createOrder.mockResolvedValue({ orderId: "order-789" });
+    payWithPaystack.mockImplementation(() => {});
+
+    const { rerender } = renderButton();
+    fireEvent.click(screen.getByRole("button", { name: /pay with paystack/i }));
+
+    await waitFor(() => expect(payWithPaystack).toHaveBeenCalled());
+
+    // Still not paid yet - cart must stay intact.
+    expect(useCart.getState().lines).toHaveLength(1);
+
+    // Simulate the webhook (Task 9) confirming the charge server-side: useOrderStatus's
+    // Realtime subscription would report the new status, so re-render as if that arrived.
+    mockedStatus = "paid";
+    rerender(
+      <MemoryRouter>
+        <PaystackButton
+          customerName="Faith Wanjiru"
+          phone="0722000101"
+          email=""
+          address=""
+          disabled={false}
+          onAttemptWhileInvalid={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(useCart.getState().lines).toHaveLength(0));
+  });
 });
