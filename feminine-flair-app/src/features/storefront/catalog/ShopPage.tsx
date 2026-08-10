@@ -7,6 +7,7 @@ import { ProductGrid } from "./ProductGrid";
 
 export function ShopPage() {
   const products = useProducts((s) => s.products);
+  const isLoading = useProducts((s) => s.isLoading);
   const [searchParams] = useSearchParams();
   const categoryFromLink = searchParams.get("category");
   const query = searchParams.get("q") ?? "";
@@ -43,7 +44,9 @@ export function ShopPage() {
         </div>
       </div>
       <FilterBar filters={filters} onChange={setFilters} sort={sort} onSortChange={setSort} />
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <p className="py-8 text-sm text-ink/60">Loading pieces…</p>
+      ) : filtered.length === 0 ? (
         <p className="py-8 text-sm text-ink/60">
           {query
             ? `No pieces match "${query}" — try a different word, or browse by category below.`

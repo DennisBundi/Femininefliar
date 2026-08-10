@@ -17,6 +17,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 export function ProductDetailPage() {
   const { slug } = useParams();
   const product = useProducts((s) => s.products.find((p) => p.slug === slug));
+  const isLoading = useProducts((s) => s.isLoading);
   const addItem = useCart((s) => s.addItem);
   const wished = useWishlist((s) => (product ? s.has(product.id) : false));
   const toggleWish = useWishlist((s) => s.toggle);
@@ -29,6 +30,7 @@ export function ProductDetailPage() {
     if (product) recordView(product.id);
   }, [product, recordView]);
 
+  if (isLoading) return <main className="px-8 py-16 text-center text-ink/60">Loading…</main>;
   if (!product) return <main className="px-8 py-16 text-center text-ink/60">Product not found.</main>;
 
   const { avg, count } = ratingSummary(product.id);
