@@ -1356,7 +1356,8 @@ declare
   did_transition boolean;
 begin
   update orders
-  set status = 'paid'
+  set status = 'paid',
+      paystack_reference = p_order_id::text
   where id = p_order_id
     and status = 'pending';
 
