@@ -195,7 +195,7 @@ create policy "public read reviews" on reviews for select using (true);
 -- Orders/order_items: anon can create, never read or update — status changes
 -- and reads happen server-side (webhook, later admin) via service_role, which
 -- bypasses RLS entirely.
-create policy "anyone can create an order" on orders for insert with check (true);
+create policy "anyone can create an order" on orders for insert with check (status = 'pending');
 create policy "anyone can create order items" on order_items for insert with check (true);
 
 -- customers, customer_addresses, transactions, wishlist_items: no client-role
