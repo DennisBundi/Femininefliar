@@ -1,19 +1,34 @@
 import { create } from "zustand";
 import type { Product } from "@/types/product";
-import { PRODUCTS_SEED, LOW_STOCK_THRESHOLD } from "@/lib/mockData";
+import { fetchProducts } from "@/lib/queries/products";
+import { LOW_STOCK_THRESHOLD } from "@/lib/mockData";
 
 interface ProductsState {
   products: Product[];
+  isLoading: boolean;
+  error: string | null;
+  fetchAll: () => Promise<void>;
   setStock: (id: string, stock: number) => void;
   recordSale: (id: string, qty: number) => void; // decrements stock + increments unitsSold together
   lowStock: () => Product[];
 }
 
-// TODO: replace PRODUCTS_SEED with `supabase.from("products").select("*")`, and setStock /
-// recordSale with the matching update() calls (ideally inside a Postgres function so stock
-// decrements are atomic under concurrent checkouts).
+// Client-side setStock/recordSale still exist for the (currently mock-data-backed,
+// unwired-this-pass) admin/POS views. Real checkout stock decrements happen
+// server-side via decrement_stock_for_order, never through these.
 export const useProducts = create<ProductsState>((set, get) => ({
-  products: PRODUCTS_SEED,
+  products: [],
+  isLoading: false,
+  error: null,
+  fetchAll: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const products = await fetchProducts();
+      set({ products, isLoading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Failed to load products", isLoading: false });
+    }
+  },
   setStock: (id, stock) =>
     set((s) => ({ products: s.products.map((p) => (p.id === id ? { ...p, stock: Math.max(0, stock) } : p)) })),
   recordSale: (id, qty) =>

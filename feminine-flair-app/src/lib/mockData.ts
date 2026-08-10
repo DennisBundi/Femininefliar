@@ -1,22 +1,10 @@
 // Demo data mirroring Feminine_Flair_UXUI_Mockup.html so the app is interactive out of the box.
 // Replace each of these with the matching Supabase query (see comments in each store) once the
 // database is live — the shapes below match the `Product` / `Order` / `Customer` types exactly.
-import type { Product } from "@/types/product";
 import type { Order } from "@/types/order";
 import type { Review } from "@/types/review";
 
 export const LOW_STOCK_THRESHOLD = 4;
-
-export const PRODUCTS_SEED: Product[] = [
-  { id: "1", slug: "amara-wrap-dress", name: "Amara Wrap Dress", category: "Dresses", priceKes: 3200, colors: ["#630625", "#F5B7BD"], sizes: ["S", "M", "L"], images: [], stock: 12, unitsSold: 8, createdAt: "2026-08-01" },
-  { id: "2", slug: "zuri-ankara-top", name: "Zuri Ankara Top", category: "Tops & Blouses", priceKes: 1900, colors: ["#241417"], sizes: ["XS", "S", "M", "L", "XL"], images: [], stock: 3, unitsSold: 5, createdAt: "2026-07-30" },
-  { id: "3", slug: "nia-beaded-clutch", name: "Nia Beaded Clutch", category: "Shoes & Bags", priceKes: 1800, colors: ["#F5B7BD"], sizes: [], images: [], stock: 20, unitsSold: 3, createdAt: "2026-07-29" },
-  { id: "4", slug: "layla-palazzo-set", name: "Layla Palazzo Set", category: "Bottoms", priceKes: 3600, colors: ["#241417", "#ffffff"], sizes: ["S", "M", "L", "XL"], images: [], stock: 2, unitsSold: 11, createdAt: "2026-07-26" },
-  { id: "5", slug: "imani-trench-coat", name: "Imani Trench Coat", category: "Outerwear", priceKes: 5400, colors: ["#630625"], sizes: ["S", "M", "L", "XL"], images: [], stock: 6, unitsSold: 4, createdAt: "2026-07-24" },
-  { id: "6", slug: "sana-block-heels", name: "Sana Block Heels", category: "Shoes & Bags", priceKes: 2900, colors: ["#241417"], sizes: [], images: [], stock: 4, unitsSold: 6, createdAt: "2026-07-20" },
-  { id: "7", slug: "riziki-hoop-earrings", name: "Riziki Hoop Earrings", category: "Jewelry", priceKes: 950, colors: ["#F5B7BD"], sizes: [], images: [], stock: 15, unitsSold: 9, createdAt: "2026-07-18" },
-  { id: "8", slug: "furaha-midi-skirt", name: "Furaha Midi Skirt", category: "Bottoms", priceKes: 2400, colors: ["#ffffff", "#241417"], sizes: ["S", "M", "L"], images: [], stock: 9, unitsSold: 2, createdAt: "2026-07-15" },
-];
 
 export const ORDERS_SEED: Order[] = [
   { id: 1042, customerName: "Faith W.", channel: "online", status: "delivered", totalKes: 3200, when: "today" },
