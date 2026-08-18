@@ -1,12 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { createOrder } from "./orders";
 
-describe("createOrder", () => {
-  it("inserts the order then its line items, returning the new order id", async () => {
-    const orderInsertSelectSingle = vi.fn().mockResolvedValue({ data: { id: "order-123" }, error: null });
-    const orderInsertSelect = vi.fn(() => ({ single: orderInsertSelectSingle }));
-    const orderInsert = vi.fn(() => ({ select: orderInsertSelect }));
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+describe("createOrder", () => {
+  it("inserts the order then its line items, returning the client-generated order id", async () => {
+    // orders.insert is not followed by .select() — anon has no SELECT grant on orders, so an
+    // insert...RETURNING would fail with "permission denied for table orders". The order id is
+    // generated client-side and supplied on insert instead of read back.
+    const orderInsert = vi.fn().mockResolvedValue({ error: null });
     const itemsInsert = vi.fn().mockResolvedValue({ error: null });
 
     const from = vi.fn((table: string) => {
@@ -28,9 +30,10 @@ describe("createOrder", () => {
       items: [{ productId: "p1", quantity: 1, priceKes: 3200 }],
     });
 
-    expect(result).toEqual({ orderId: "order-123" });
+    expect(result.orderId).toMatch(UUID_RE);
     expect(orderInsert).toHaveBeenCalledWith([
       {
+        id: result.orderId,
         customer_name: "Faith Wanjiru",
         phone: "0722000101",
         email: null,
@@ -41,7 +44,7 @@ describe("createOrder", () => {
       },
     ]);
     expect(itemsInsert).toHaveBeenCalledWith([
-      { order_id: "order-123", product_id: "p1", quantity: 1, price_kes: 3200 },
+      { order_id: result.orderId, product_id: "p1", quantity: 1, price_kes: 3200 },
     ]);
   });
 });
