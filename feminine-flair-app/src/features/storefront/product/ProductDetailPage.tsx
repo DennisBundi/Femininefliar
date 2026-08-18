@@ -5,7 +5,6 @@ import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/useToast";
 import { priceLabel, ratingSummary } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
 import { StarRating } from "@/components/shared/StarRating";
 import { ProductGallery } from "./ProductGallery";
 import { VariantPicker } from "./VariantPicker";
@@ -41,7 +40,7 @@ export function ProductDetailPage() {
         <Link to="/">Home</Link> / <Link to="/shop">Shop</Link> / {product.category} / {product.name}
       </div>
       <div className="grid grid-cols-1 gap-[52px] md:grid-cols-2">
-        <ProductGallery gradient={placeholderGradient(product.id)} />
+        <ProductGallery product={product} />
         <div>
           <p className="mb-1.5 text-xs uppercase tracking-wide text-ink/60">{product.category}</p>
           <h1 className="mb-2.5 font-serif text-3xl">{product.name}</h1>

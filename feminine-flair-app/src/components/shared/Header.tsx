@@ -5,7 +5,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useProducts } from "@/hooks/useProducts";
 import { searchProducts } from "@/lib/search";
 import { priceLabel } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 
 const NAV_LINKS = [
   { to: "/", label: "Home", end: true },
@@ -68,7 +68,7 @@ function SearchBox({ onNavigate }: { onNavigate: () => void }) {
                   onClick={() => { setOpen(false); setQuery(""); onNavigate(); }}
                   className="flex items-center gap-3 rounded p-2 text-xs hover:bg-blush-soft/40"
                 >
-                  <span className="h-10 w-8 flex-shrink-0 rounded" style={{ background: placeholderGradient(p.id) }} />
+                  <ProductThumb product={p} className="h-10 w-8 flex-shrink-0 rounded" />
                   <span className="flex-1">
                     <span className="block font-semibold">{p.name}</span>
                     <span className="block text-ink/60">{p.category} · {priceLabel(p.priceKes)}</span>

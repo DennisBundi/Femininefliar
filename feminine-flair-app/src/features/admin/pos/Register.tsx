@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { useOrders } from "@/hooks/useOrders";
 import { priceLabel } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 import { ReceiptPrinter } from "./ReceiptPrinter";
 
 interface TicketLine { productId: string; name: string; priceKes: number; qty: number }
@@ -66,7 +66,7 @@ export function Register() {
             <div className="flex flex-col gap-2">
               {results.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 rounded bg-white p-2.5 shadow-sm">
-                  <div className="h-[50px] w-10 flex-shrink-0 rounded" style={{ background: placeholderGradient(p.id) }} />
+                  <ProductThumb product={p} className="h-[50px] w-10 flex-shrink-0 rounded" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold">{p.name}</p>
                     <p className="text-xs text-ink/60">{priceLabel(p.priceKes)} · {p.stock} in stock</p>

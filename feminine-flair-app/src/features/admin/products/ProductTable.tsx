@@ -2,7 +2,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/useToast";
 import { priceLabel } from "@/lib/mockData";
 import { LOW_STOCK_THRESHOLD } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 
 export function ProductTable() {
   const products = useProducts((s) => s.products);
@@ -34,7 +34,7 @@ export function ProductTable() {
                 : { label: "In stock", cls: "bg-[#dcf0dc] text-[#256c25]" };
               return (
                 <tr key={p.id} className="border-b border-blush-soft">
-                  <td className="py-2.5"><div className="h-[42px] w-[34px] rounded" style={{ background: placeholderGradient(p.id) }} /></td>
+                  <td className="py-2.5"><ProductThumb product={p} className="h-[42px] w-[34px] rounded" /></td>
                   <td>{p.name}</td>
                   <td>{p.category}</td>
                   <td>{priceLabel(p.priceKes)}</td>
