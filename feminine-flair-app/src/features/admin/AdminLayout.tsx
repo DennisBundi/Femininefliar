@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", end: true },
@@ -35,6 +36,12 @@ export function AdminLayout() {
         <Link to="/" className="border-t border-[#3a2b2e] pt-4 text-xs text-[#a8969a] hover:text-white">
           ← Back to store
         </Link>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="mt-2 text-left text-xs text-[#a8969a] hover:text-white"
+        >
+          Sign out
+        </button>
       </aside>
       <div className="flex-1 overflow-x-hidden px-10 py-8">
         <Outlet />
