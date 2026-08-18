@@ -10,13 +10,15 @@ interface TicketLine { productId: string; name: string; priceKes: number; qty: n
 // Confirmed flow: search product → add → cash or card → done.
 export function Register() {
   const products = useProducts((s) => s.products);
-  const recordSale = useProducts((s) => s.recordSale);
-  const addOrder = useOrders((s) => s.addOrder);
+  const fetchProducts = useProducts((s) => s.fetchAll);
+  const addPosSale = useOrders((s) => s.addPosSale);
 
   const [query, setQuery] = useState("");
   const [ticket, setTicket] = useState<TicketLine[]>([]);
   const [method, setMethod] = useState<"cash" | "card">("cash");
   const [receipt, setReceipt] = useState<{ lines: TicketLine[]; total: number; method: "cash" | "card" } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const results = useMemo(
     () => (query.trim() ? products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())) : products),
@@ -35,17 +37,29 @@ export function Register() {
     setTicket((t) => t.map((l) => (l.productId === productId ? { ...l, qty: Math.max(1, qty) } : l)));
   }
 
-  function completeSale() {
-    if (!ticket.length) return;
-    ticket.forEach((l) => recordSale(l.productId, l.qty));
-    addOrder({ customerName: "Walk-in", channel: "pos", status: "paid", totalKes: total, when: "today" });
-    setReceipt({ lines: ticket, total, method });
+  async function completeSale() {
+    if (!ticket.length || isSubmitting) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await addPosSale({
+        totalKes: total,
+        items: ticket.map((l) => ({ productId: l.productId, quantity: l.qty, priceKes: l.priceKes })),
+      });
+      await fetchProducts(); // refresh stock/unitsSold, decremented server-side by the sale
+      setReceipt({ lines: ticket, total, method });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete sale — please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function startNewSale() {
     setTicket([]);
     setQuery("");
     setReceipt(null);
+    setError(null);
   }
 
   return (
@@ -107,7 +121,14 @@ export function Register() {
               <button onClick={() => setMethod("cash")} className={`flex-1 rounded border py-2.5 text-xs ${method === "cash" ? "border-burgundy bg-burgundy text-white" : "border-blush-soft"}`}>Cash</button>
               <button onClick={() => setMethod("card")} className={`flex-1 rounded border py-2.5 text-xs ${method === "card" ? "border-burgundy bg-burgundy text-white" : "border-blush-soft"}`}>Card / Paystack</button>
             </div>
-            <button onClick={completeSale} className="w-full rounded bg-burgundy py-3.5 text-sm font-bold text-white">Complete sale</button>
+            {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
+            <button
+              onClick={completeSale}
+              disabled={isSubmitting}
+              className="w-full rounded bg-burgundy py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? "Completing sale…" : "Complete sale"}
+            </button>
           </div>
         </div>
       )}

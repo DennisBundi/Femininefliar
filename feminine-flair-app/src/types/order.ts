@@ -8,12 +8,12 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: number;
+  id: string;
   customerName: string;
   channel: OrderChannel;
   status: OrderStatus;
   totalKes: number;
-  when: "today" | "yesterday" | string; // ISO date once this comes from Supabase
+  when: string; // ISO date (orders.created_at)
   items?: OrderItem[];
   paystackReference?: string;
 }

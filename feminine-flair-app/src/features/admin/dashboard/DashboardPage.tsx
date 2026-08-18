@@ -4,6 +4,7 @@ import { priceLabel } from "@/lib/mockData";
 
 export function DashboardPage() {
   const orders = useOrders((s) => s.orders);
+  const isLoading = useOrders((s) => s.isLoading);
   const today = useOrders((s) => s.today());
   const lowStock = useProducts((s) => s.lowStock());
   const todaySales = today.reduce((n, o) => n + o.totalKes, 0);
@@ -30,24 +31,28 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="rounded bg-white p-5 shadow-sm">
           <h3 className="mb-3.5 text-sm font-semibold">Recent orders</h3>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-blush-soft text-[11px] uppercase text-ink/60">
-                <th className="py-2 text-left">Order</th><th className="text-left">Customer</th><th className="text-left">Channel</th><th className="text-left">Status</th><th className="text-left">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.slice(0, 6).map((o) => (
-                <tr key={o.id} className="border-b border-blush-soft">
-                  <td className="py-2.5">#{o.id}</td>
-                  <td>{o.customerName}</td>
-                  <td className="capitalize">{o.channel}</td>
-                  <td><span className="rounded-full bg-[#dcf0dc] px-2 py-0.5 text-[10.5px] text-[#256c25]">{o.status}</span></td>
-                  <td>{priceLabel(o.totalKes)}</td>
+          {isLoading ? (
+            <p className="py-4 text-xs text-ink/60">Loading…</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-blush-soft text-[11px] uppercase text-ink/60">
+                  <th className="py-2 text-left">Order</th><th className="text-left">Customer</th><th className="text-left">Channel</th><th className="text-left">Status</th><th className="text-left">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orders.slice(0, 6).map((o) => (
+                  <tr key={o.id} className="border-b border-blush-soft">
+                    <td className="py-2.5">#{o.id.slice(0, 8)}</td>
+                    <td>{o.customerName}</td>
+                    <td className="capitalize">{o.channel}</td>
+                    <td><span className="rounded-full bg-[#dcf0dc] px-2 py-0.5 text-[10.5px] text-[#256c25]">{o.status}</span></td>
+                    <td>{priceLabel(o.totalKes)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
         <div className="rounded bg-white p-5 shadow-sm">
           <h3 className="mb-3.5 text-sm font-semibold">Low stock alerts</h3>
