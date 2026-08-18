@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CATEGORIES } from "@/lib/mockData";
 
 export interface ShopFilters {
   categories: Set<string>;
@@ -7,7 +8,6 @@ export interface ShopFilters {
   maxPriceKes: number;
 }
 
-const CATEGORIES = ["Dresses", "Tops & Blouses", "Bottoms", "Outerwear", "Shoes & Bags", "Jewelry"];
 const SIZES = ["XS", "S", "M", "L", "XL"];
 const COLORS = [
   { hex: "#630625", label: "Burgundy" },

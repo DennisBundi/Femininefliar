@@ -33,3 +33,65 @@ export async function fetchProducts(): Promise<Product[]> {
   if (error) throw error;
   return (data ?? []).map((row) => toProduct(row, row.product_variants ?? []));
 }
+
+export interface ProductInput {
+  name: string;
+  slug: string;
+  category: string;
+  priceKes: number;
+  description?: string;
+  images: string[];
+  colors: string[];
+  sizes: string[];
+  stock: number;
+}
+
+export async function createProduct(input: ProductInput): Promise<Product> {
+  const { data, error } = await supabase
+    .from("products")
+    .insert([
+      {
+        name: input.name,
+        slug: input.slug,
+        category: input.category,
+        price_kes: input.priceKes,
+        description: input.description || null,
+        images: input.images,
+        colors: input.colors,
+        sizes: input.sizes,
+        stock: input.stock,
+      },
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return toProduct(data, []);
+}
+
+export async function updateProduct(id: string, input: ProductInput): Promise<void> {
+  const { error } = await supabase
+    .from("products")
+    .update({
+      name: input.name,
+      slug: input.slug,
+      category: input.category,
+      price_kes: input.priceKes,
+      description: input.description || null,
+      images: input.images,
+      colors: input.colors,
+      sizes: input.sizes,
+      stock: input.stock,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateStock(id: string, stock: number): Promise<void> {
+  const { error } = await supabase.from("products").update({ stock }).eq("id", id);
+  if (error) throw error;
+}

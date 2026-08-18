@@ -5,6 +5,10 @@ import type { Review } from "@/types/review";
 
 export const LOW_STOCK_THRESHOLD = 4;
 
+// Matches the categories seeded in supabase/seed.sql — used by the shop filter bar and the
+// admin product form.
+export const CATEGORIES = ["Dresses", "Tops & Blouses", "Bottoms", "Outerwear", "Shoes & Bags", "Jewelry"];
+
 export const REVIEWS_SEED: Review[] = [
   { id: "r1", productId: "1", customerName: "Faith W.", rating: 5, comment: "Fits true to size and the wrap tie is so easy to adjust. Wore it to a wedding and got so many compliments.", verifiedPurchase: true, createdAt: "2026-07-28" },
   { id: "r2", productId: "1", customerName: "Cynthia N.", rating: 4, comment: "Lovely fabric, slightly long on me (I'm 5'2\") but nothing a tailor couldn't fix.", verifiedPurchase: true, createdAt: "2026-07-20" },
