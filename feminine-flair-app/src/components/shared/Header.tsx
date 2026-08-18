@@ -6,6 +6,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { searchProducts } from "@/lib/search";
 import { priceLabel } from "@/lib/mockData";
 import { ProductThumb } from "@/components/shared/ProductThumb";
+import logo from "@/assets/logo.png";
 
 const NAV_LINKS = [
   { to: "/", label: "Home", end: true },
@@ -107,8 +108,9 @@ export function Header() {
           <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "-translate-y-[6.5px] -rotate-45" : ""}`} />
         </button>
 
-        <Link to="/" className="font-serif text-xl font-semibold tracking-tight text-burgundy">
-          FEMININE FLAIR
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src={logo} alt="" className="h-11 w-auto object-contain mix-blend-multiply" />
+          <span className="font-serif text-xl font-semibold tracking-tight text-burgundy">FEMININE FLAIR</span>
         </Link>
 
         <nav className="hidden gap-8 text-sm md:flex">
