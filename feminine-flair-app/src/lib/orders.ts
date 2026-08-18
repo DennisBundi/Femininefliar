@@ -11,15 +11,15 @@ export interface CreateOrderInput {
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string }> {
-  // Generated client-side and inserted explicitly, rather than reading the
-  // id back via .select() after insert: the anon role has no SELECT policy
-  // on orders (by design — status/PII stay unreadable via the anon key), and
-  // Postgres RLS requires SELECT permission to return a row via RETURNING.
-  const id = crypto.randomUUID();
+  // Generated client-side rather than read back via .select() after insert: anon has no SELECT
+  // grant on orders (by design — order status/PII reads happen server-side only), so an
+  // insert...RETURNING would fail with "permission denied for table orders". Supplying the id
+  // ourselves sidesteps the read-back entirely.
+  const orderId = crypto.randomUUID();
 
   const { error: orderError } = await supabase.from("orders").insert([
     {
-      id,
+      id: orderId,
       customer_name: input.customerName,
       phone: input.phone,
       email: input.email || null,
@@ -34,7 +34,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
 
   const { error: itemsError } = await supabase.from("order_items").insert(
     input.items.map((item) => ({
-      order_id: id,
+      order_id: orderId,
       product_id: item.productId,
       quantity: item.quantity,
       price_kes: item.priceKes,
@@ -43,5 +43,5 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
 
   if (itemsError) throw itemsError;
 
-  return { orderId: id };
+  return { orderId };
 }

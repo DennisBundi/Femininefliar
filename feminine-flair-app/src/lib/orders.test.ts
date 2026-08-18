@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { createOrder } from "./orders";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 describe("createOrder", () => {
   it("inserts the order then its line items, returning the client-generated order id", async () => {
+    // orders.insert is not followed by .select() — anon has no SELECT grant on orders, so an
+    // insert...RETURNING would fail with "permission denied for table orders". The order id is
+    // generated client-side and supplied on insert instead of read back.
     const orderInsert = vi.fn().mockResolvedValue({ error: null });
     const itemsInsert = vi.fn().mockResolvedValue({ error: null });
 
@@ -25,9 +30,7 @@ describe("createOrder", () => {
       items: [{ productId: "p1", quantity: 1, priceKes: 3200 }],
     });
 
-    // No RETURNING/`.select()` involved: the anon role has no SELECT policy
-    // on orders, so the id must be generated client-side and inserted directly.
-    expect(result.orderId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(result.orderId).toMatch(UUID_RE);
     expect(orderInsert).toHaveBeenCalledWith([
       {
         id: result.orderId,
