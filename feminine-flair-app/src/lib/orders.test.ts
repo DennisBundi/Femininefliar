@@ -2,11 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { createOrder } from "./orders";
 
 describe("createOrder", () => {
-  it("inserts the order then its line items, returning the new order id", async () => {
-    const orderInsertSelectSingle = vi.fn().mockResolvedValue({ data: { id: "order-123" }, error: null });
-    const orderInsertSelect = vi.fn(() => ({ single: orderInsertSelectSingle }));
-    const orderInsert = vi.fn(() => ({ select: orderInsertSelect }));
-
+  it("inserts the order then its line items, returning the client-generated order id", async () => {
+    const orderInsert = vi.fn().mockResolvedValue({ error: null });
     const itemsInsert = vi.fn().mockResolvedValue({ error: null });
 
     const from = vi.fn((table: string) => {
@@ -28,9 +25,12 @@ describe("createOrder", () => {
       items: [{ productId: "p1", quantity: 1, priceKes: 3200 }],
     });
 
-    expect(result).toEqual({ orderId: "order-123" });
+    // No RETURNING/`.select()` involved: the anon role has no SELECT policy
+    // on orders, so the id must be generated client-side and inserted directly.
+    expect(result.orderId).toMatch(/^[0-9a-f-]{36}$/);
     expect(orderInsert).toHaveBeenCalledWith([
       {
+        id: result.orderId,
         customer_name: "Faith Wanjiru",
         phone: "0722000101",
         email: null,
@@ -41,7 +41,7 @@ describe("createOrder", () => {
       },
     ]);
     expect(itemsInsert).toHaveBeenCalledWith([
-      { order_id: "order-123", product_id: "p1", quantity: 1, price_kes: 3200 },
+      { order_id: result.orderId, product_id: "p1", quantity: 1, price_kes: 3200 },
     ]);
   });
 });
