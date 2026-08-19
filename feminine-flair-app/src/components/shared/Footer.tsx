@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import logoWhite from "@/assets/logo-white.png";
 
 const SOCIALS = [
   { label: "Instagram", href: "https://www.instagram.com/feminine_flair_ke" },
@@ -11,7 +12,10 @@ export function Footer() {
     <footer className="bg-ink px-8 py-14 text-sm text-white/80">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-9 md:grid-cols-4">
         <div>
-          <p className="mb-2 font-serif text-xl text-white">FF Feminine Flair</p>
+          <p className="mb-2 flex items-center gap-2">
+            <img src={logoWhite} alt="" className="h-7 w-auto object-contain" />
+            <span className="font-serif text-xl text-white">Feminine Flair</span>
+          </p>
           <p>Women's clothing and accessories, curated in Nairobi and shipped across Kenya.</p>
         </div>
         <div>

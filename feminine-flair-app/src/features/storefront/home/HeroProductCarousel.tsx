@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { priceLabel } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 import { Link } from "react-router-dom";
 
 // Newest 6 products by createdAt, 3 visible at a time. Arrow/dot navigation only — no autoplay
@@ -53,7 +53,7 @@ export function HeroProductCarousel() {
         >
           {newest6.map((p) => (
             <Link key={p.id} to={`/product/${p.slug}`} className="box-border w-[16.6667%] px-1.5">
-              <div className="mb-2 aspect-[3/4] rounded" style={{ background: placeholderGradient(p.id) }} />
+              <ProductThumb product={p} className="mb-2 aspect-[3/4] w-full rounded" />
               <p className="text-xs font-semibold">{p.name}</p>
               <p className="text-xs font-bold text-burgundy">{priceLabel(p.priceKes)}</p>
             </Link>

@@ -4,7 +4,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/useToast";
 import { priceLabel, ratingSummary } from "@/lib/mockData";
-import { placeholderGradient } from "@/lib/placeholder";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 import { StarRating } from "@/components/shared/StarRating";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -16,7 +16,8 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <Link to={`/product/${product.slug}`} className="group cursor-pointer">
-      <div className="relative mb-3.5 aspect-[3/4] overflow-hidden rounded" style={{ background: placeholderGradient(product.id) }}>
+      <div className="relative mb-3.5 aspect-[3/4] overflow-hidden rounded">
+        <ProductThumb product={product} className="absolute inset-0 h-full w-full" />
         <button
           onClick={(e) => { e.preventDefault(); toggleWish(product.id); }}
           className={`absolute right-2.5 top-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white shadow ${wished ? "text-burgundy" : "text-ink/50"}`}

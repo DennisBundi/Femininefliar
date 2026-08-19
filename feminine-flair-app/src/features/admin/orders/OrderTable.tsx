@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useOrders } from "@/hooks/useOrders";
-import { priceLabel } from "@/lib/mockData";
+import { priceLabel, whenLabel } from "@/lib/mockData";
 import { StatusUpdater } from "./StatusUpdater";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -13,6 +13,8 @@ const STATUS_COLOR: Record<string, string> = {
 
 export function OrderTable() {
   const orders = useOrders((s) => s.orders);
+  const isLoading = useOrders((s) => s.isLoading);
+  const error = useOrders((s) => s.error);
   const advanceStatus = useOrders((s) => s.advanceStatus);
   const [channel, setChannel] = useState<"all" | "online" | "pos">("all");
 
@@ -33,26 +35,32 @@ export function OrderTable() {
         ))}
       </div>
       <div className="rounded bg-white p-5 shadow-sm">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-blush-soft text-[11px] uppercase text-ink/60">
-              <th className="py-2 text-left">Order</th><th className="text-left">Customer</th><th className="text-left">Channel</th><th className="text-left">Status</th><th className="text-left">Total</th><th className="text-left">When</th><th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((o) => (
-              <tr key={o.id} className="border-b border-blush-soft">
-                <td className="py-2.5">#{o.id}</td>
-                <td>{o.customerName}</td>
-                <td className="capitalize">{o.channel}</td>
-                <td><span className={`rounded-full px-2 py-0.5 text-[10.5px] ${STATUS_COLOR[o.status]}`}>{o.status}</span></td>
-                <td>{priceLabel(o.totalKes)}</td>
-                <td className="capitalize text-ink/60">{o.when}</td>
-                <td><StatusUpdater status={o.status} onAdvance={() => advanceStatus(o.id)} /></td>
+        {isLoading ? (
+          <p className="py-6 text-center text-xs text-ink/60">Loading orders…</p>
+        ) : error ? (
+          <p className="py-6 text-center text-xs text-red-500">{error}</p>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-blush-soft text-[11px] uppercase text-ink/60">
+                <th className="py-2 text-left">Order</th><th className="text-left">Customer</th><th className="text-left">Channel</th><th className="text-left">Status</th><th className="text-left">Total</th><th className="text-left">When</th><th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.map((o) => (
+                <tr key={o.id} className="border-b border-blush-soft">
+                  <td className="py-2.5">#{o.id.slice(0, 8)}</td>
+                  <td>{o.customerName}</td>
+                  <td className="capitalize">{o.channel}</td>
+                  <td><span className={`rounded-full px-2 py-0.5 text-[10.5px] ${STATUS_COLOR[o.status]}`}>{o.status}</span></td>
+                  <td>{priceLabel(o.totalKes)}</td>
+                  <td className="text-ink/60">{whenLabel(o.when)}</td>
+                  <td><StatusUpdater status={o.status} onAdvance={() => advanceStatus(o.id)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
