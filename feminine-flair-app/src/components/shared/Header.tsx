@@ -99,20 +99,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-blush-soft bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-4 px-8">
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-8 w-8 flex-col items-center justify-center gap-1 md:hidden"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-        >
-          <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "translate-y-[6.5px] rotate-45" : ""}`} />
-          <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "opacity-0" : ""}`} />
-          <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "-translate-y-[6.5px] -rotate-45" : ""}`} />
-        </button>
-
         <Link to="/" className="flex items-center gap-2.5">
           <img src={logo} alt="" className="h-11 w-auto object-contain mix-blend-multiply" />
-          <span className="font-serif text-xl font-semibold tracking-tight text-burgundy">FEMININE FLAIR</span>
+          <span className="hidden font-serif text-xl font-semibold tracking-tight text-burgundy md:inline">FEMININE FLAIR</span>
         </Link>
 
         <nav className="hidden gap-8 text-sm md:flex">
@@ -128,9 +117,6 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-5">
-          <Link to={user ? "/account/orders" : "/account/login"} aria-label="Account">
-            Account
-          </Link>
           <Link to="/account/wishlist" className="relative" aria-label="Wishlist">
             ♡
             <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-burgundy text-[10px] text-white">
@@ -142,6 +128,19 @@ export function Header() {
             <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-burgundy text-[10px] text-white">
               {cartCount}
             </span>
+          </button>
+          <Link to={user ? "/account/orders" : "/account/login"} aria-label="Account">
+            Account
+          </Link>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-8 w-8 flex-col items-center justify-center gap-1 md:hidden"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "translate-y-[6.5px] rotate-45" : ""}`} />
+            <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "opacity-0" : ""}`} />
+            <span className={`h-[1.5px] w-5 bg-ink transition ${menuOpen ? "-translate-y-[6.5px] -rotate-45" : ""}`} />
           </button>
         </div>
       </div>
