@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { priceLabel } from "@/lib/mockData";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 
 export function CartDrawer() {
   const { lines, isOpen, setOpen, incrementLine, decrementLine, removeItem, subtotal } = useCart();
@@ -21,7 +22,7 @@ export function CartDrawer() {
           {lines.length === 0 && <p className="py-5 text-sm text-ink/60">Your bag is empty.</p>}
           {lines.map((line) => (
             <div key={line.product.id} className="flex gap-3.5">
-              <div className="h-[88px] w-[70px] flex-shrink-0 rounded" style={{ background: `linear-gradient(150deg,#F5B7BD,#630625)` }} />
+              <ProductThumb product={line.product} className="h-[88px] w-[70px] flex-shrink-0 rounded" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">{line.product.name}</p>
                 <p className="mb-2 text-xs text-ink/60">{line.product.category}</p>

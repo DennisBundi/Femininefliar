@@ -1,5 +1,6 @@
 import { useCart } from "@/hooks/useCart";
 import { priceLabel } from "@/lib/mockData";
+import { ProductThumb } from "@/components/shared/ProductThumb";
 
 export function OrderSummary() {
   const { lines, subtotal, deliveryMode } = useCart();
@@ -11,7 +12,7 @@ export function OrderSummary() {
       <h3 className="mb-3.5 text-base font-semibold">Order summary</h3>
       {lines.map((line) => (
         <div key={line.product.id} className="mb-3.5 flex gap-3 text-xs">
-          <div className="h-14 w-11 flex-shrink-0 rounded" style={{ background: "linear-gradient(150deg,#F5B7BD,#630625)" }} />
+          <ProductThumb product={line.product} className="h-14 w-11 flex-shrink-0 rounded" />
           <div>
             <p className="font-semibold">{line.product.name} × {line.qty}</p>
             <p className="text-ink/60">{priceLabel(line.product.priceKes * line.qty)}</p>
