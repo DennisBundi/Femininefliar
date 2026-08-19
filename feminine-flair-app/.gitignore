@@ -7,3 +7,4 @@ e2e/.env
 playwright-report/
 test-results/
 .vercel
+tsconfig.tsbuildinfo

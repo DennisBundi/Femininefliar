@@ -11,6 +11,7 @@ import { OrderHistoryPage } from "@/features/storefront/account/OrderHistoryPage
 import { WishlistPage } from "@/features/storefront/account/WishlistPage";
 import { ReturnsPage } from "@/features/storefront/policies/ReturnsPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
+import { AdminGuard } from "@/features/admin/AdminGuard";
 import { DashboardPage } from "@/features/admin/dashboard/DashboardPage";
 import { ProductTable } from "@/features/admin/products/ProductTable";
 import { OrderTable } from "@/features/admin/orders/OrderTable";
@@ -19,8 +20,6 @@ import { Register } from "@/features/admin/pos/Register";
 import { ReportsPage } from "@/features/admin/reports/ReportsPage";
 import { Toast } from "@/components/shared/Toast";
 
-// TODO: wrap the /admin/* branch in an auth guard once Supabase auth is wired up — for now it's
-// reachable via the "Admin" link in the storefront footer, same as the confirmed HTML mockup.
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -39,7 +38,14 @@ export function AppRouter() {
           <Route path="/account/wishlist" element={<WishlistPage />} />
         </Route>
 
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={
+            <AdminGuard>
+              <AdminLayout />
+            </AdminGuard>
+          }
+        >
           <Route index element={<DashboardPage />} />
           <Route path="products" element={<ProductTable />} />
           <Route path="orders" element={<OrderTable />} />
