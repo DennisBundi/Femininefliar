@@ -99,9 +99,9 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-blush-soft bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-[76px] max-w-6xl items-center justify-between gap-4 px-8">
-        <Link to="/" className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Feminine Flair — Home">
           <img src={logo} alt="" className="h-11 w-auto object-contain mix-blend-multiply" />
-          <span className="hidden font-serif text-xl font-semibold tracking-tight text-burgundy md:inline">FEMININE FLAIR</span>
+          <span className="hidden font-serif text-xl font-semibold tracking-tight text-burgundy">FEMININE FLAIR</span>
         </Link>
 
         <nav className="hidden gap-8 text-sm md:flex">
