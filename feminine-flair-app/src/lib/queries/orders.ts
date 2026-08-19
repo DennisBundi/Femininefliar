@@ -27,6 +27,18 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   if (error) throw error;
 }
 
+// RLS (migration 0008) already restricts this to the signed-in user's own rows — the .eq() here
+// is belt-and-braces, not what actually enforces it.
+export async function fetchMyOrders(customerId: string): Promise<Order[]> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toOrder);
+}
+
 export interface PosSaleInput {
   totalKes: number;
   items: { productId: string; quantity: number; priceKes: number }[];

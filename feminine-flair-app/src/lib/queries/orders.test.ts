@@ -70,6 +70,34 @@ describe("updateOrderStatus", () => {
   });
 });
 
+describe("fetchMyOrders", () => {
+  it("fetches orders filtered by customer id", async () => {
+    vi.resetModules();
+    const order = vi.fn().mockResolvedValue({ data: [ROW], error: null });
+    const eq = vi.fn(() => ({ order }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    vi.doMock("@/lib/supabase", () => ({ supabase: { from } }));
+    const { fetchMyOrders } = await import("./orders");
+
+    const orders = await fetchMyOrders("user-123");
+
+    expect(from).toHaveBeenCalledWith("orders");
+    expect(eq).toHaveBeenCalledWith("customer_id", "user-123");
+    expect(orders).toEqual([
+      {
+        id: "o1",
+        customerName: "Faith Wanjiru",
+        channel: "online",
+        status: "paid",
+        totalKes: 3500,
+        when: "2026-08-15T10:00:00Z",
+        paystackReference: "o1",
+      },
+    ]);
+  });
+});
+
 describe("completePosSale", () => {
   beforeEach(() => vi.resetModules());
 

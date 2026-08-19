@@ -8,6 +8,7 @@ export interface CreateOrderInput {
   deliveryMode: "delivery" | "pickup";
   totalKes: number;
   items: { productId: string; quantity: number; priceKes: number }[];
+  customerId?: string; // set when checking out signed in — links the order to the account
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string }> {
@@ -17,9 +18,22 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
   // ourselves sidesteps the read-back entirely.
   const orderId = crypto.randomUUID();
 
+  if (input.customerId) {
+    // Keep the profile in sync with whatever they just typed at checkout (upsert covers both the
+    // first order after signup, when the profile row may not exist yet, and later orders).
+    const { error: profileError } = await supabase.from("customers").upsert({
+      id: input.customerId,
+      full_name: input.customerName,
+      email: input.email || null,
+      phone: input.phone,
+    });
+    if (profileError) throw profileError;
+  }
+
   const { error: orderError } = await supabase.from("orders").insert([
     {
       id: orderId,
+      customer_id: input.customerId ?? null,
       customer_name: input.customerName,
       phone: input.phone,
       email: input.email || null,

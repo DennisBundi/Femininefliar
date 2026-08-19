@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/hooks/useAuth";
 import { searchProducts } from "@/lib/search";
 import { priceLabel } from "@/lib/mockData";
 import { ProductThumb } from "@/components/shared/ProductThumb";
@@ -92,6 +93,7 @@ export function Header() {
   const cartCount = useCart((s) => s.count());
   const wishCount = useWishlist((s) => s.count());
   const openCart = useCart((s) => () => s.setOpen(true));
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -126,6 +128,9 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-5">
+          <Link to={user ? "/account/orders" : "/account/login"} aria-label="Account">
+            Account
+          </Link>
           <Link to="/account/wishlist" className="relative" aria-label="Wishlist">
             ♡
             <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-burgundy text-[10px] text-white">

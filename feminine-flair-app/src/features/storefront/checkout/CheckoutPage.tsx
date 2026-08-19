@@ -1,6 +1,8 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchMyProfile } from "@/lib/queries/customers";
 import { getCheckoutErrors, type CheckoutForm } from "@/lib/validation";
 import { OrderSummary } from "./OrderSummary";
 import { PaystackButton } from "./PaystackButton";
@@ -9,8 +11,23 @@ type Touched = Partial<Record<keyof CheckoutForm, boolean>>;
 
 export function CheckoutPage() {
   const { deliveryMode, setDeliveryMode } = useCart();
+  const { user } = useAuth();
   const [form, setForm] = useState<CheckoutForm>({ fullName: "", phone: "", email: "", address: "" });
   const [touched, setTouched] = useState<Touched>({});
+
+  useEffect(() => {
+    if (!user) return;
+    fetchMyProfile(user.id).then((profile) => {
+      if (!profile) return;
+      // Pre-fill from the account, but never clobber anything already typed this session.
+      setForm((f) => ({
+        fullName: f.fullName || profile.fullName,
+        phone: f.phone || profile.phone || "",
+        email: f.email || profile.email || user.email || "",
+        address: f.address,
+      }));
+    });
+  }, [user]);
 
   const errors = useMemo(() => getCheckoutErrors(form, deliveryMode), [form, deliveryMode]);
   const isValid = Object.keys(errors).length === 0;
@@ -95,6 +112,7 @@ export function CheckoutPage() {
             phone={form.phone}
             email={form.email}
             address={form.address}
+            customerId={user?.id}
             disabled={!isValid}
             onAttemptWhileInvalid={() => setTouched({ fullName: true, phone: true, email: true, address: true })}
           />

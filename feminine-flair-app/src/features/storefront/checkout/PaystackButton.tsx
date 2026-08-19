@@ -11,11 +11,12 @@ interface PaystackButtonProps {
   phone: string;
   email: string;
   address: string;
+  customerId?: string;
   disabled: boolean;
   onAttemptWhileInvalid: () => void;
 }
 
-export function PaystackButton({ customerName, phone, email, address, disabled, onAttemptWhileInvalid }: PaystackButtonProps) {
+export function PaystackButton({ customerName, phone, email, address, customerId, disabled, onAttemptWhileInvalid }: PaystackButtonProps) {
   const { lines, subtotal, deliveryMode, clear } = useCart();
   const showToast = useToast((s) => s.show);
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export function PaystackButton({ customerName, phone, email, address, disabled, 
         deliveryMode,
         totalKes: total,
         items: lines.map((line) => ({ productId: line.product.id, quantity: line.qty, priceKes: line.product.priceKes })),
+        customerId,
       });
       setOrderId(newOrderId);
 
